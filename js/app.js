@@ -34,7 +34,15 @@ const store = {
 /* ------------------------------------------------------------------ */
 /* state                                                                */
 /* ------------------------------------------------------------------ */
-const cfg = { mode: 'type', level: 1, region: 'all', clock: 0, ...(store.get('ossa.cfg') || {}) };
+// v2 folded Extended into Core and renumbered Complete from 3 to 2, so old saved setups and bests no longer apply
+const saved = store.get('ossa.cfg') || {};
+if (store.get('ossa.v') !== 2) {
+  if (saved.level === 3) saved.level = 2; else if (saved.level === 2) saved.level = 1;
+  try { Object.keys(localStorage).filter((k) => k.startsWith('ossa.best.')).forEach((k) => localStorage.removeItem(k)); } catch { /* storage unavailable */ }
+  store.set('ossa.cfg', saved);
+  store.set('ossa.v', 2);
+}
+const cfg = { mode: 'type', level: 1, region: 'all', clock: 0, ...saved };
 if (!LEVELS[cfg.level] || !REGIONS[cfg.region] || ![0, 120, 300].includes(cfg.clock) || !['type', 'choose', 'locate', 'legacy'].includes(cfg.mode)) {
   Object.assign(cfg, { mode: 'type', level: 1, region: 'all', clock: 0 });
 }
@@ -77,7 +85,7 @@ const anchors = {};
 build.bones.forEach((r) => {
   if (r.anchor && r.side <= 0 && !anchors[r.id]) anchors[r.id] = r.anchor;
 });
-const ANCHOR_VIA = { cranium: 'frontal', sternum: 'sternal-body', ribs: 'true-ribs', pelvis: 'ilium', carpals: 'capitate', tarsals: 'cuboid' };
+const ANCHOR_VIA = { cranium: 'frontal', sternum: 'sternal-body', ribs: 'true-ribs', pelvis: 'ilium', carpals: 'scaphoid', tarsals: 'navicular' };
 function anchorFor(key) {
   if (anchors[key]) return anchors[key];
   if (anchors[ANCHOR_VIA[key]]) return anchors[ANCHOR_VIA[key]];
@@ -463,7 +471,7 @@ function syncControls() {
     if (grp.classList.contains('seg')) placeThumb(grp);
   });
   $('#mode-hint').textContent = MODE_HINT[cfg.mode];
-  [1, 2, 3].forEach((lv) => { $(`i[data-n="${lv}"]`).textContent = questionSet(lv, cfg.region).length; });
+  [1, 2].forEach((lv) => { $(`i[data-n="${lv}"]`).textContent = questionSet(lv, cfg.region).length; });
   const n = currentSet().length;
   $('#begin-n').textContent = n;
   $('#begin').disabled = n === 0;
@@ -548,6 +556,7 @@ function startRun(keys) {
   timer = setInterval(tick, legacy ? 100 : 250);
   sk.classList.toggle('probe', cfg.mode === 'locate');
   if (legacy) buildDots(keys); else clearDots();
+  if (legacy) { highlight(null); clearPin(); goto(homeCam(), 500); } // every pin must be in view when the run starts
   showView('ask');
   ask();
 }

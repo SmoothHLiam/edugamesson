@@ -61,7 +61,7 @@ export function buildSkeleton() {
   }
 
   /* ------------------------------------------------------------------ */
-  /* VERTEBRAL COLUMN                                                     */
+  /* VERTEBRAE, SACRUM AND COCCYX                                         */
   /* ------------------------------------------------------------------ */
   const vertebra = (b, y, hw, h, tpTo, tpW, tone = 'bone') => {
     for (const s of SIDES) {
@@ -310,7 +310,7 @@ export function buildSkeleton() {
         const t = tube([p0, pm, p1], keys, { n: 10, hit: isMc ? 10 : 9, shade: isMc ? 0.4 : 0 });
         (isMc ? mc : ph).tube(t);
         if (fi === 1 && k === 1) ph.at(...pm);
-        if (fi === 1 && k === 0) mc.at(...pos(f, d + L * 0.6));
+        if (fi === 1 && k === 0) mc.at(...pos(f, d + L * 0.45));
         d += L;
       });
     });
@@ -385,7 +385,7 @@ export function buildSkeleton() {
       return blob(c[0], c[1], rx, ry, baseAng + sign * rot, jit, n);
     };
 
-    bone('calcaneus', s).at(...F(15, 12)).fill(fb(15, 11, 8.6, 14, 0.06, [1, 1.04, 0.96], 10));
+    bone('calcaneus', s).at(...F(17, 3)).fill(fb(15, 11, 8.6, 14, 0.06, [1, 1.04, 0.96], 10));
     {
       const b = bone('talus', s).at(...F(-1, 5));
       b.fill(fb(-1, 2.5, 10.5, 8.6, 0, [1, 1.05, 0.95], 10));

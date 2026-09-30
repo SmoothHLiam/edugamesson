@@ -21,9 +21,13 @@ Remaining, Correct, Wrong, Accuracy and a stopwatch with tenths of a second.
 The other modes use points: 100 per correct answer (60 on a second try), plus a streak bonus,
 minus 25 per letter hint.
 
-Three sets share one drawing: **Core** (17 bones), **Extended** (25) and **Complete** (48,
-down to individual carpals, tarsals and cranial bones). Filter by region, add a 2 or 5 minute
-clock, and study first by hovering or clicking the figure. Scroll or pinch to zoom, drag to pan.
+Two sets share one drawing. **Core** is the 26 bones of the class master sheet: cranium, mandible,
+cervical, thoracic and lumbar vertebrae, pelvis, sacrum, coccyx, clavicle, scapula, sternum, ribs,
+humerus, radius, ulna, carpals, metacarpals, phalanges (hand), femur, patella, tibia, fibula,
+calcaneus, tarsals, metatarsals and phalanges (foot). **Complete** is 48 bones and breaks those
+down further, to individual carpals, tarsals, cranial bones, rib groups and the parts of the
+pelvis and sternum. Filter by region, add a 2 or 5 minute clock, and study first by hovering or
+clicking the figure. Scroll or pinch to zoom, drag to pan.
 Bests are stored in `localStorage`.
 
 ## Run locally
