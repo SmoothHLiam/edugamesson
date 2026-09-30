@@ -1,5 +1,5 @@
 // Bone catalogue. `id`s that have geometry match data-bone in skeleton.js; ids without
-// geometry (skull, spine, pelvis, ...) are parents that merge their children at lower levels.
+// geometry (cranium, spine, pelvis, ...) are parents that merge their children at lower levels.
 //
 //   level    lowest difficulty at which the bone is asked as itself
 //   splitAt  from this difficulty upward the bone is replaced by its children
@@ -25,14 +25,14 @@ const b = (id, name, o) => ({ id, name, syn: [], everyday: [], level: 1, parent:
 
 export const BONES = [
   /* head */
-  b('skull', 'Skull', { region: 'axial', splitAt: 3, syn: ['cranium'], everyday: ['the bones of the head'], note: 'Twenty-two bones, all fused except the mandible, that protect the brain and frame the face.' }),
-  b('parietal', 'Parietal bone', { region: 'axial', level: 3, parent: 'skull', syn: [], everyday: ['top and sides of the head'], note: 'A pair of plates that form the roof and upper sides of the cranium, meeting at the sagittal suture.' }),
-  b('frontal', 'Frontal bone', { region: 'axial', level: 3, parent: 'skull', syn: [], everyday: ['forehead bone'], note: 'Forms the forehead and the roofs of both eye sockets.' }),
-  b('temporal', 'Temporal bone', { region: 'axial', level: 3, parent: 'skull', frame: 'both', syn: [], everyday: ['temple bone'], note: 'Sits at the side of the skull and houses the structures of the ear and the jaw joint.' }),
-  b('zygomatic', 'Zygomatic bone', { region: 'axial', level: 3, parent: 'skull', frame: 'both', syn: ['zygoma', 'malar'], everyday: ['cheekbone', 'cheek bone'], note: 'The cheekbone. It forms the outer rim of the eye socket and part of the zygomatic arch.' }),
-  b('maxilla', 'Maxilla', { region: 'axial', level: 3, parent: 'skull', syn: [], everyday: ['upper jaw'], note: 'The upper jaw. It holds the upper teeth and forms the floor of the eye socket and the sides of the nose.' }),
-  b('nasal', 'Nasal bone', { region: 'axial', level: 3, parent: 'skull', syn: [], everyday: ['nose bone', 'bridge of the nose'], note: 'Two small bones that form the bridge of the nose. The rest of the nose is cartilage.' }),
-  b('mandible', 'Mandible', { region: 'axial', syn: [], everyday: ['jaw', 'jawbone', 'jaw bone', 'lower jaw'], note: 'The lower jaw and the only skull bone that moves. It holds the lower teeth.' }),
+  b('cranium', 'Cranium', { region: 'axial', splitAt: 3, syn: [], everyday: ['the bones of the head', 'skull'], note: 'Twenty-one fused bones that protect the brain and frame the face. Only the mandible, which hangs from it, is separate.' }),
+  b('parietal', 'Parietal bone', { region: 'axial', level: 3, parent: 'cranium', syn: [], everyday: ['top and sides of the head'], note: 'A pair of plates that form the roof and upper sides of the cranium, meeting at the sagittal suture.' }),
+  b('frontal', 'Frontal bone', { region: 'axial', level: 3, parent: 'cranium', syn: [], everyday: ['forehead bone'], note: 'Forms the forehead and the roofs of both eye sockets.' }),
+  b('temporal', 'Temporal bone', { region: 'axial', level: 3, parent: 'cranium', frame: 'both', syn: [], everyday: ['temple bone'], note: 'Sits at the side of the cranium and houses the structures of the ear and the jaw joint.' }),
+  b('zygomatic', 'Zygomatic bone', { region: 'axial', level: 3, parent: 'cranium', frame: 'both', syn: ['zygoma', 'malar'], everyday: ['cheekbone', 'cheek bone'], note: 'The cheekbone. It forms the outer rim of the eye socket and part of the zygomatic arch.' }),
+  b('maxilla', 'Maxilla', { region: 'axial', level: 3, parent: 'cranium', syn: [], everyday: ['upper jaw'], note: 'The upper jaw. It holds the upper teeth and forms the floor of the eye socket and the sides of the nose.' }),
+  b('nasal', 'Nasal bone', { region: 'axial', level: 3, parent: 'cranium', syn: [], everyday: ['nose bone', 'bridge of the nose'], note: 'Two small bones that form the bridge of the nose. The rest of the nose is cartilage.' }),
+  b('mandible', 'Mandible', { region: 'axial', syn: [], everyday: ['jaw', 'jawbone', 'jaw bone', 'lower jaw'], note: 'The lower jaw and the only head bone that moves freely. It holds the lower teeth.' }),
 
   /* spine */
   b('spine', 'Vertebral column', { region: 'axial', splitAt: 2, syn: ['spinal column'], everyday: ['spine', 'backbone'], note: 'A stack of vertebrae that shields the spinal cord and carries the weight of the upper body. Twenty-four of them stay mobile.' }),

@@ -434,7 +434,7 @@ export function buildSkeleton() {
   }
 
   /* ------------------------------------------------------------------ */
-  /* SKULL (drawn last so the mandible sits in front of the neck)         */
+  /* CRANIUM (drawn last so the mandible sits in front of the neck)       */
   /* ------------------------------------------------------------------ */
   const orbitLat = 20.5, orbitY = 78.5;
 
@@ -487,7 +487,7 @@ export function buildSkeleton() {
     });
   }
 
-  // skull voids: orbits (with a bevelled rim), nasal aperture, small foramina
+  // cranium voids: orbits (with a bevelled rim), nasal aperture, small foramina
   for (const s of SIDES) {
     rims.push(squircle(CX + s * orbitLat, orbitY, 12.4, 11.8, 2.4, s * 0.18, 22));
     voids.push(squircle(CX + s * orbitLat, orbitY, 10.6, 10, 2.4, s * 0.18, 22));
