@@ -77,7 +77,7 @@ const anchors = {};
 build.bones.forEach((r) => {
   if (r.anchor && r.side <= 0 && !anchors[r.id]) anchors[r.id] = r.anchor;
 });
-const ANCHOR_VIA = { cranium: 'frontal', spine: 'lumbar', sternum: 'sternal-body', ribs: 'true-ribs', pelvis: 'ilium', 'hip-bone': 'ilium', carpals: 'capitate', tarsals: 'cuboid' };
+const ANCHOR_VIA = { cranium: 'frontal', sternum: 'sternal-body', ribs: 'true-ribs', pelvis: 'ilium', 'hip-bone': 'ilium', carpals: 'capitate', tarsals: 'cuboid' };
 function anchorFor(key) {
   if (anchors[key]) return anchors[key];
   if (anchors[ANCHOR_VIA[key]]) return anchors[ANCHOR_VIA[key]];

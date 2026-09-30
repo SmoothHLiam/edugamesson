@@ -1,5 +1,5 @@
 // Bone catalogue. `id`s that have geometry match data-bone in skeleton.js; ids without
-// geometry (cranium, spine, pelvis, ...) are parents that merge their children at lower levels.
+// geometry (cranium, pelvis, ...) are parents that merge their children at lower levels.
 //
 //   level    lowest difficulty at which the bone is asked as itself
 //   splitAt  from this difficulty upward the bone is replaced by its children
@@ -34,11 +34,10 @@ export const BONES = [
   b('nasal', 'Nasal bone', { region: 'axial', level: 3, parent: 'cranium', syn: [], everyday: ['nose bone', 'bridge of the nose'], note: 'Two small bones that form the bridge of the nose. The rest of the nose is cartilage.' }),
   b('mandible', 'Mandible', { region: 'axial', syn: [], everyday: ['jaw', 'jawbone', 'jaw bone', 'lower jaw'], note: 'The lower jaw and the only head bone that moves freely. It holds the lower teeth.' }),
 
-  /* spine */
-  b('spine', 'Vertebral column', { region: 'axial', splitAt: 2, syn: ['spinal column'], everyday: ['spine', 'backbone'], note: 'A stack of vertebrae that shields the spinal cord and carries the weight of the upper body. Twenty-four of them stay mobile.' }),
-  b('cervical', 'Cervical vertebrae', { region: 'axial', level: 2, parent: 'spine', syn: ['cervical spine'], everyday: ['neck bones', 'neck vertebrae'], note: 'Seven neck vertebrae, the smallest and most mobile. The first two, atlas and axis, allow nodding and turning.' }),
-  b('thoracic', 'Thoracic vertebrae', { region: 'axial', level: 2, parent: 'spine', syn: ['thoracic spine'], everyday: ['upper back bones', 'chest vertebrae'], note: 'Twelve vertebrae that each carry a pair of ribs and form the back of the rib cage.' }),
-  b('lumbar', 'Lumbar vertebrae', { region: 'axial', level: 2, parent: 'spine', syn: ['lumbar spine'], everyday: ['lower back bones'], note: 'Five large vertebrae in the lower back. They bear the greatest load of the spine.' }),
+  /* vertebrae */
+  b('cervical', 'Cervical vertebrae', { region: 'axial', syn: ['cervical spine'], everyday: ['neck bones', 'neck vertebrae'], note: 'Seven neck vertebrae, the smallest and most mobile. The first two, atlas and axis, allow nodding and turning.' }),
+  b('thoracic', 'Thoracic vertebrae', { region: 'axial', syn: ['thoracic spine'], everyday: ['upper back bones', 'chest vertebrae'], note: 'Twelve vertebrae that each carry a pair of ribs and form the back of the rib cage.' }),
+  b('lumbar', 'Lumbar vertebrae', { region: 'axial', syn: ['lumbar spine'], everyday: ['lower back bones'], note: 'Five large vertebrae in the lower back. They bear the greatest load of the spine.' }),
 
   /* thorax */
   b('sternum', 'Sternum', { region: 'axial', splitAt: 3, syn: [], everyday: ['breastbone', 'breast bone'], note: 'The breastbone. A flat bone in three parts that anchors the upper seven pairs of ribs.' }),

@@ -21,7 +21,7 @@ Remaining, Correct, Wrong, Accuracy and a stopwatch with tenths of a second.
 The other modes use points: 100 per correct answer (60 on a second try), plus a streak bonus,
 minus 25 per letter hint.
 
-Three sets share one drawing: **Core** (15 bones), **Extended** (25) and **Complete** (48,
+Three sets share one drawing: **Core** (17 bones), **Extended** (25) and **Complete** (48,
 down to individual carpals, tarsals and cranial bones). Filter by region, add a 2 or 5 minute
 clock, and study first by hovering or clicking the figure. Scroll or pinch to zoom, drag to pan.
 Bests are stored in `localStorage`.
