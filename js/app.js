@@ -1,5 +1,5 @@
 import { buildSkeleton, renderMarkup } from './skeleton.js';
-import { BY_ID, LEVELS, REGIONS, resolve, questionSet, judge } from './data.js';
+import { BY_ID, LEVELS, REGIONS, resolve, questionSet, judge, everydayHit } from './data.js';
 
 /* ------------------------------------------------------------------ */
 /* helpers                                                              */
@@ -14,6 +14,8 @@ const el = (tag, cls, txt) => {
 };
 const pad2 = (n) => String(n).padStart(2, '0');
 const fmtTime = (s) => `${Math.floor(s / 60)}:${pad2(Math.floor(s % 60))}`;
+const fmtTenths = (s) => `${fmtTime(s)}.${Math.floor((s * 10) % 10)}`;
+const fmtAcc = (a) => `${Number.isInteger(a) ? a : a.toFixed(1)}%`;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const shuffle = (a) => {
   for (let i = a.length - 1; i > 0; i--) {
@@ -33,7 +35,7 @@ const store = {
 /* state                                                                */
 /* ------------------------------------------------------------------ */
 const cfg = { mode: 'type', level: 1, region: 'all', clock: 0, ...(store.get('ossa.cfg') || {}) };
-if (!LEVELS[cfg.level] || !REGIONS[cfg.region] || ![0, 120, 300].includes(cfg.clock) || !['type', 'choose', 'locate'].includes(cfg.mode)) {
+if (!LEVELS[cfg.level] || !REGIONS[cfg.region] || ![0, 120, 300].includes(cfg.clock) || !['type', 'choose', 'locate', 'legacy'].includes(cfg.mode)) {
   Object.assign(cfg, { mode: 'type', level: 1, region: 'all', clock: 0 });
 }
 let run = null;
@@ -42,6 +44,7 @@ let selected = null;
 let hoverKey = null;
 let timer = 0;
 let nextGuard = 0;
+let legacyTimer = 0;
 
 /* ------------------------------------------------------------------ */
 /* DOM                                                                  */
@@ -137,6 +140,7 @@ function applyCam() {
   const v = viewRect();
   sk.setAttribute('viewBox', `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`);
   updatePin();
+  updateDots();
 }
 function goto(target, ms = 720) {
   cancelAnimationFrame(camAnim);
@@ -427,14 +431,16 @@ listBody.addEventListener('pointerleave', () => {
 /* setup controls                                                       */
 /* ------------------------------------------------------------------ */
 const MODE_HINT = {
-  type: 'A bone is highlighted. Type its name; everyday names like kneecap are accepted.',
+  type: 'A bone is highlighted. Type its anatomical name. A wrong answer gets one more try and a hint.',
   choose: 'A bone is highlighted. Pick the right name from four options.',
   locate: 'You are given a name. Click the matching bone on the figure.',
+  legacy: 'The classic format. Click the pin that matches each name, one click per bone. Ranked by accuracy, then time.',
 };
 const FOOT = {
-  type: 'Enter checks your answer. A hint costs 25 points.',
+  type: 'Enter checks your answer. A wrong first try gets a hint and one more go. A letter hint costs 25 points.',
   choose: 'Press 1 to 4 to choose. Enter or Space continues.',
   locate: 'A second try scores 60. Scroll to zoom, drag to pan.',
+  legacy: 'Accuracy sets your rank and time breaks ties. Scroll or pinch to zoom in on small bones. Quitting is not ranked.',
 };
 const regionBox = $('.chips[data-key="region"]');
 Object.entries(REGIONS).forEach(([k, label]) => {
@@ -461,10 +467,15 @@ function syncControls() {
   const n = currentSet().length;
   $('#begin-n').textContent = n;
   $('#begin').disabled = n === 0;
+  const legacy = cfg.mode === 'legacy';
+  $('#f-clock').classList.toggle('off', legacy);
+  $('#l-clock').textContent = legacy ? 'Clock · stopwatch in legacy' : 'Clock';
   const best = store.get(bestKey());
-  $('#best').textContent = best ? `Best ${best.score.toLocaleString('en-US')} · ${best.acc}%` : 'No score yet for this setup';
+  $('#best').textContent = !best ? 'No score yet for this setup'
+    : best.legacy ? `Best ${fmtAcc(best.acc)} · ${fmtTenths(best.ms / 1000)}`
+    : `Best ${best.score.toLocaleString('en-US')} · ${best.acc}%`;
 }
-const bestKey = () => `ossa.best.${cfg.mode}.${cfg.level}.${cfg.region}.${cfg.clock}`;
+const bestKey = () => (cfg.mode === 'legacy' ? `ossa.best.legacy.${cfg.level}.${cfg.region}` : `ossa.best.${cfg.mode}.${cfg.level}.${cfg.region}.${cfg.clock}`);
 
 $$('[data-key]').forEach((grp) => {
   grp.addEventListener('click', (e) => {
@@ -501,6 +512,8 @@ function resetStats() {
   setStat('score', '0'); setStat('streak', '0'); setStat('time', '0:00');
   stat.time.classList.remove('low');
   $('#st-time-l').textContent = 'Time';
+  $('#st-score-l').textContent = 'Score';
+  $('#st-streak-w').hidden = false;
 }
 
 $('#toggle-list').addEventListener('click', () => {
@@ -514,17 +527,27 @@ $('#toggle-list').addEventListener('click', () => {
 /* ------------------------------------------------------------------ */
 function startRun(keys) {
   clearInterval(timer);
+  clearTimeout(legacyTimer);
+  const legacy = cfg.mode === 'legacy';
+  const clock = legacy ? 0 : cfg.clock;
   run = {
-    queue: keys, i: 0, res: {}, score: 0, streak: 0, bestStreak: 0, hints: 0, correct: 0,
-    t0: performance.now(), endsAt: cfg.clock ? performance.now() + cfg.clock * 1000 : 0, cur: null,
+    queue: keys, i: 0, res: {}, score: 0, streak: 0, bestStreak: 0, hints: 0, correct: 0, wrong: 0,
+    legacy, clock, t0: performance.now(), endsAt: clock ? performance.now() + clock * 1000 : 0, cur: null,
   };
   selected = null; hoverKey = null;
   readout.hidden = true; hideTip();
   resetStats();
-  $('#st-time-l').textContent = cfg.clock ? 'Left' : 'Time';
-  setStat('time', cfg.clock ? fmtTime(cfg.clock) : '0:00');
-  timer = setInterval(tick, 250);
+  $('#st-time-l').textContent = clock ? 'Left' : 'Time';
+  setStat('time', clock ? fmtTime(clock) : '0:00');
+  if (legacy) {
+    $('#st-score-l').textContent = 'Accuracy';
+    $('#st-streak-w').hidden = true;
+    setStat('score', '0%');
+    setStat('time', '0:00.0');
+  }
+  timer = setInterval(tick, legacy ? 100 : 250);
   sk.classList.toggle('probe', cfg.mode === 'locate');
+  if (legacy) buildDots(keys); else clearDots();
   showView('ask');
   ask();
 }
@@ -532,11 +555,13 @@ function startRun(keys) {
 function tick() {
   if (!run) return;
   const now = performance.now();
-  if (cfg.clock) {
+  if (run.clock) {
     const left = Math.max(0, (run.endsAt - now) / 1000);
     setStat('time', fmtTime(Math.ceil(left)));
     stat.time.classList.toggle('low', left <= 10);
     if (left <= 0 && (phase === 'ask' || phase === 'feedback')) finish('time');
+  } else if (run.legacy) {
+    setStat('time', fmtTenths((now - run.t0) / 1000));
   } else {
     setStat('time', fmtTime((now - run.t0) / 1000));
   }
@@ -555,19 +580,26 @@ function ask() {
   const v = views.ask;
   v.style.animation = 'none'; void v.offsetWidth; v.style.animation = '';
 
+  const legacy = run.legacy;
   $('#foot').textContent = FOOT[cfg.mode];
+  $('#hud').hidden = !legacy;
+  $('#end').textContent = legacy ? 'Quit' : 'End session';
+  $('#pop').hidden = true;
   $('#a-type').hidden = cfg.mode !== 'type';
   $('#a-choose').hidden = cfg.mode !== 'choose';
-  $('#a-locate').hidden = cfg.mode !== 'locate';
+  $('#a-locate').hidden = !(cfg.mode === 'locate' || legacy);
+  $('#skip-l').hidden = legacy;
   $('#prompt').hidden = false;
+  if (legacy) updateHud();
 
-  if (cfg.mode === 'locate') {
+  if (cfg.mode === 'locate' || legacy) {
     $('#prompt').textContent = 'Find the';
     $('#loc-name').textContent = bone.name;
-    $('#loc-hint').textContent = 'Click the bone on the figure.';
+    $('#loc-hint').className = 'hint';
+    $('#loc-hint').textContent = legacy ? 'Click the matching pin on the figure.' : 'Click the bone on the figure.';
     highlight(null);
     clearPin();
-    goto(homeCam(), 600);
+    if (!legacy) goto(homeCam(), 600);
   } else {
     $('#prompt').textContent = 'Name the highlighted bone.';
     highlight(key);
@@ -627,8 +659,9 @@ function conclude(kind, info = {}) {
   const c = run.cur;
   const bone = BY_ID[c.key];
   let pts = 0;
+  $('#pop').hidden = true;
   if (kind === 'ok') {
-    const base = cfg.mode === 'locate' && c.attempts > 0 ? 60 : 100;
+    const base = c.attempts > 0 ? 60 : 100;
     pts = Math.max(20, base - c.hint * 25) + Math.min(run.streak, 5) * 10;
     run.score += pts;
     run.correct++;
@@ -652,7 +685,8 @@ function conclude(kind, info = {}) {
   // panel
   const verdict = $('#fb-verdict');
   verdict.className = `verdict ${kind === 'ok' ? 'ok' : 'bad'}`;
-  verdict.textContent = kind === 'ok' ? `Correct${info.close ? ', spelling adjusted' : ''}  ·  +${pts}` : kind === 'skip' ? 'Skipped' : 'Not quite';
+  const tags = [c.attempts > 0 && 'second try', info.close && 'spelling adjusted'].filter(Boolean);
+  verdict.textContent = kind === 'ok' ? `Correct${tags.length ? ', ' + tags.join(', ') : ''}  ·  +${pts}` : kind === 'skip' ? 'Skipped' : 'Not quite';
   $('#fb-name').textContent = bone.name;
   const note = $('#fb-note');
   note.textContent = '';
@@ -680,13 +714,39 @@ function advance() {
   if (run.i >= run.queue.length) finish('complete'); else ask();
 }
 
+function shake(node) {
+  node.classList.remove('shake');
+  void node.offsetWidth;
+  node.classList.add('shake');
+}
+function showPop(text) {
+  const pop = $('#pop');
+  pop.replaceChildren(el('b', '', 'hint:'), document.createTextNode(` ${text}`));
+  pop.hidden = false;
+  pop.style.animation = 'none';
+  void pop.offsetWidth;
+  pop.style.animation = '';
+}
+
 $('#a-type').addEventListener('submit', (e) => {
   e.preventDefault();
   if (phase !== 'ask') return;
-  const v = $('#in').value.trim();
-  if (!v) { const i = $('#in'); i.classList.remove('shake'); void i.offsetWidth; i.classList.add('shake'); return; }
-  const verdict = judge(v, BY_ID[run.cur.key], questionSet(cfg.level, 'all'));
-  if (verdict === 'no') conclude('miss', { said: v }); else conclude('ok', { close: verdict === 'close' });
+  const input = $('#in');
+  const v = input.value.trim();
+  if (!v) { shake(input); return; }
+  const c = run.cur;
+  const bone = BY_ID[c.key];
+  const verdict = judge(v, bone, questionSet(cfg.level, 'all'));
+  if (verdict !== 'no') { conclude('ok', { close: verdict === 'close' }); return; }
+  if (c.attempts === 0) {
+    // one more chance, with the everyday name as a nudge
+    c.attempts = 1;
+    showPop(everydayHit(v, bone) ? 'right idea, now the anatomical name' : bone.everyday[0]);
+    shake(input);
+    input.select();
+    return;
+  }
+  conclude('miss', { said: v });
 });
 $('#hint').addEventListener('click', () => {
   if (phase !== 'ask' || run.cur.hint >= 2) return;
@@ -727,12 +787,96 @@ function answerLocate(clickedKey) {
   stage.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }], { duration: 260 });
 }
 
+/* --- legacy: pins, one click per bone, ranked by accuracy then time --- */
+const dotsG = $('#dots');
+const dots = new Map();
+function buildDots(keys) {
+  clearDots();
+  keys.forEach((k) => {
+    const a = anchorFor(k);
+    if (!a) return;
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('class', 'dotg');
+    g.dataset.key = k;
+    g.innerHTML = '<circle class="dot-hit" r="15"/><circle class="dot" r="7"/>';
+    dotsG.appendChild(g);
+    dots.set(k, { g, a, x: 0, y: 0 });
+  });
+  updateDots();
+}
+function clearDots() { dotsG.textContent = ''; dots.clear(); }
+function updateDots() {
+  if (!dots.size) return;
+  const v = viewRect(), b = box();
+  dots.forEach((d) => {
+    const { g, a } = d;
+    const x = ((a[0] - v.x) / v.w) * b.width, y = ((a[1] - v.y) / v.h) * b.height;
+    d.x = x; d.y = y;
+    g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    g.style.display = x < -20 || x > b.width + 20 || y < -20 || y > b.height + 20 ? 'none' : '';
+  });
+}
+/** The pin nearest the pointer wins, so overlapping pins never steal each other's clicks. */
+function nearestDot(e, reach = 16) {
+  const b = box();
+  const px = e.clientX - b.left, py = e.clientY - b.top;
+  let best = null, bd = reach;
+  dots.forEach((d, k) => {
+    if (d.g.classList.contains('done')) return;
+    const dd = Math.hypot(d.x - px, d.y - py);
+    if (dd < bd) { bd = dd; best = k; }
+  });
+  return best;
+}
+dotsG.addEventListener('click', (e) => {
+  const k = nearestDot(e);
+  if (k) answerLegacy(k);
+});
+dotsG.addEventListener('pointermove', (e) => {
+  const k = nearestDot(e);
+  dots.forEach((d, key) => d.g.classList.toggle('hot', key === k));
+});
+dotsG.addEventListener('pointerleave', () => dots.forEach((d) => d.g.classList.remove('hot')));
+function updateHud() {
+  const done = run.correct + run.wrong;
+  const acc = done ? Math.round((run.correct / done) * 100) : 0;
+  $('#h-rem').textContent = run.queue.length - done;
+  $('#h-ok').textContent = run.correct;
+  $('#h-bad').textContent = run.wrong;
+  $('#h-acc').textContent = `${acc}%`;
+  setStat('score', `${acc}%`);
+}
+function answerLegacy(key) {
+  if (phase !== 'ask' || !run?.legacy) return;
+  const c = run.cur;
+  const right = key === c.key;
+  run.res[c.key] = { status: right ? 'ok' : 'miss', ms: performance.now() - c.t };
+  if (right) run.correct++; else run.wrong++;
+  dots.get(c.key)?.g.classList.add('done', 'reveal', right ? 'ok' : 'miss');
+  updateHud();
+  setPhase('feedback');
+  highlight(c.key, right ? 'ok' : '');
+  const name = BY_ID[c.key].name.toLowerCase();
+  const line = $('#loc-hint');
+  line.className = `hint ${right ? 'ok' : 'bad'}`;
+  line.textContent = right ? `Correct, the ${name}.` : `That pin is the ${BY_ID[key].name.toLowerCase()}. The answer was the ${name}.`;
+  $('#qprog').style.width = `${((run.i + 1) / run.queue.length) * 100}%`;
+  renderList();
+  scrollCurrentIntoView();
+  legacyTimer = setTimeout(advanceLegacy, right ? 650 : 1300);
+}
+function advanceLegacy() {
+  if (!run || !run.legacy || phase !== 'feedback') return;
+  run.i++;
+  if (run.i >= run.queue.length) finish('complete'); else ask();
+}
+
 $('#next').addEventListener('click', advance);
 $('#end').addEventListener('click', () => { if (phase === 'ask' || phase === 'feedback') finish('ended'); });
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (phase === 'feedback' && (e.key === 'Enter' || (e.key === ' ' && document.activeElement?.id !== 'next'))) {
+  if (phase === 'feedback' && !run?.legacy && (e.key === 'Enter' || (e.key === ' ' && document.activeElement?.id !== 'next'))) {
     if (performance.now() < nextGuard) { e.preventDefault(); return; }
     if (document.activeElement?.id === 'next' && e.key === 'Enter') return; // button click handles it
     e.preventDefault();
@@ -748,12 +892,71 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* --- results --- */
+function setResultCells(cells) {
+  $$('.grid-stats > div').forEach((c, i) => {
+    $('dt', c).textContent = cells[i][0];
+    $('dd', c).textContent = cells[i][1];
+  });
+}
+
+function finishLegacy(reason) {
+  const total = run.queue.length;
+  const secs = (performance.now() - run.t0) / 1000;
+  const done = run.correct + run.wrong;
+  const acc = done ? (run.correct / done) * 100 : 0;
+  const ranked = reason === 'complete';
+  const missed = run.queue.filter((k) => run.res[k]?.status === 'miss');
+  const unreached = run.queue.filter((k) => !run.res[k]);
+  run.summary = { total, secs, acc, missed, unreached, reason };
+
+  setPhase('done');
+  sk.classList.remove('probe');
+  highlight(null);
+  clearPin();
+  clearDots();
+  goto(homeCam(), 800);
+  setStat('time', fmtTenths(secs));
+
+  // PurposeGames ranks by accuracy first, then speed, then whoever got there first
+  let versus = 'Unranked';
+  if (ranked) {
+    const prev = store.get(bestKey());
+    const now = { legacy: true, acc, ms: Math.round(secs * 1000) };
+    const better = !prev || now.acc > prev.acc + 1e-9 || (Math.abs(now.acc - prev.acc) < 1e-9 && now.ms < prev.ms);
+    if (better) { store.set(bestKey(), now); versus = prev ? 'New best' : 'First result'; } else versus = 'Not beaten';
+  }
+  $('#r-eyebrow').textContent = ranked ? 'Ranked result' : 'Quit, not ranked';
+  $('#r-score').textContent = fmtAcc(acc);
+  $('#r-line').textContent = `${run.correct} correct and ${run.wrong} wrong in ${fmtTenths(secs)}. Rank is set by accuracy, then time.`;
+  setResultCells([['Correct', run.correct], ['Wrong', run.wrong], ['Time', fmtTenths(secs)], ['Versus best', versus]]);
+  fillReview(missed, unreached);
+  showView('result');
+  renderList();
+}
+
+function fillReview(missed, unreached) {
+  const box = $('#r-missed');
+  box.textContent = '';
+  missed.forEach((k) => {
+    const b = el('button', 'pill', BY_ID[k].name);
+    b.type = 'button';
+    b.addEventListener('click', () => select(k));
+    box.appendChild(b);
+  });
+  $('#r-missed-wrap').hidden = missed.length === 0;
+  const again = missed.length + unreached.length;
+  $('#retry').hidden = again === 0;
+  $('#retry').textContent = unreached.length ? `Retry the ${again} left` : 'Retry missed';
+}
+
 function finish(reason) {
   clearInterval(timer);
+  clearTimeout(legacyTimer);
+  if (run.legacy) { finishLegacy(reason); return; }
   const total = run.queue.length;
-  const secs = cfg.clock ? Math.min(cfg.clock, (performance.now() - run.t0) / 1000) : (performance.now() - run.t0) / 1000;
+  const secs = run.clock ? Math.min(run.clock, (performance.now() - run.t0) / 1000) : (performance.now() - run.t0) / 1000;
   let bonus = 0;
-  if (cfg.clock && reason === 'complete') bonus = Math.round(Math.max(0, cfg.clock - secs) * 1.5);
+  if (run.clock && reason === 'complete') bonus = Math.round(Math.max(0, run.clock - secs) * 1.5);
   run.score += bonus;
   const attempted = Object.keys(run.res).length;
   const acc = attempted ? Math.round((run.correct / attempted) * 100) : 0;
@@ -777,24 +980,8 @@ function finish(reason) {
   $('#r-eyebrow').textContent = reason === 'time' ? 'Time is up' : reason === 'ended' ? 'Session ended' : 'Session complete';
   $('#r-score').textContent = run.score.toLocaleString('en-US');
   $('#r-line').textContent = line + (bonus ? `, with a ${bonus} point time bonus.` : '.');
-  $('#r-acc').textContent = `${acc}%`;
-  $('#r-time').textContent = fmtTime(secs);
-  $('#r-streak').textContent = run.bestStreak;
-  $('#r-hints').textContent = run.hints;
-
-  const wrap = $('#r-missed-wrap');
-  const box = $('#r-missed');
-  box.textContent = '';
-  missed.forEach((k) => {
-    const b = el('button', 'pill', BY_ID[k].name);
-    b.type = 'button';
-    b.addEventListener('click', () => select(k));
-    box.appendChild(b);
-  });
-  wrap.hidden = missed.length === 0;
-  const again = missed.length + unreached.length;
-  $('#retry').hidden = again === 0;
-  $('#retry').textContent = unreached.length ? `Retry the ${again} left` : 'Retry missed';
+  setResultCells([['Accuracy', `${acc}%`], ['Time', fmtTime(secs)], ['Best streak', run.bestStreak], ['Hints used', run.hints]]);
+  fillReview(missed, unreached);
 
   const prev = store.get(bestKey());
   if (attempted && (!prev || run.score > prev.score)) store.set(bestKey(), { score: run.score, acc });
@@ -814,6 +1001,8 @@ $('#retry').addEventListener('click', () => {
   if (sm && sm.missed.length + sm.unreached.length) startRun(shuffle([...sm.missed, ...sm.unreached]));
 });
 $('#back').addEventListener('click', () => {
+  clearTimeout(legacyTimer);
+  clearDots();
   run = null;
   setPhase('idle');
   clearSelection();

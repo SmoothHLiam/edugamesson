@@ -33,8 +33,8 @@
         <span>Bones</span>
       </button>
       <dl class="stats" aria-label="Session stats">
-        <div><dt>Score</dt><dd id="st-score">0</dd></div>
-        <div><dt>Streak</dt><dd id="st-streak">0</dd></div>
+        <div><dt id="st-score-l">Score</dt><dd id="st-score">0</dd></div>
+        <div id="st-streak-w"><dt>Streak</dt><dd id="st-streak">0</dd></div>
         <div><dt id="st-time-l">Time</dt><dd id="st-time">0:00</dd></div>
       </dl>
     </header>
@@ -53,6 +53,7 @@
         <path class="pin-line" id="pin-line" d=""/>
         <circle class="pin-ring" id="pin-ring" r="9"/>
         <circle class="pin-dot" id="pin-dot" r="3.2"/>
+        <g id="dots"></g>
       </svg>
       <div class="chip" id="chip" hidden><b id="chip-n"></b><span id="chip-t"></span></div>
       <div class="tip" id="tip" hidden></div>
@@ -86,6 +87,7 @@
             <button type="button" role="radio" data-v="type">Type</button>
             <button type="button" role="radio" data-v="choose">Choose</button>
             <button type="button" role="radio" data-v="locate">Locate</button>
+            <button type="button" role="radio" data-v="legacy">Legacy</button>
           </div>
           <p class="hint" id="mode-hint"></p>
         </div>
@@ -105,7 +107,7 @@
           <div class="chips" role="radiogroup" aria-labelledby="l-region" data-key="region"></div>
         </div>
 
-        <div class="field">
+        <div class="field" id="f-clock">
           <p class="eyebrow" id="l-clock">Clock</p>
           <div class="seg" role="radiogroup" aria-labelledby="l-clock" data-key="clock">
             <span class="thumb"></span>
@@ -129,11 +131,21 @@
         </div>
         <div class="progress" aria-hidden="true"><i id="qprog"></i></div>
 
+        <dl class="hud" id="hud" hidden>
+          <div><dt>Remaining</dt><dd id="h-rem">0</dd></div>
+          <div><dt>Correct</dt><dd id="h-ok">0</dd></div>
+          <div><dt>Wrong</dt><dd id="h-bad">0</dd></div>
+          <div><dt>Accuracy</dt><dd id="h-acc">0%</dd></div>
+        </dl>
+
         <p class="prompt" id="prompt"></p>
 
         <form class="answer" id="a-type" autocomplete="off">
           <label class="sr" for="in">Bone name</label>
-          <input class="input" id="in" type="text" inputmode="text" enterkeyhint="go" placeholder="Type the name" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <div class="inputwrap">
+            <input class="input" id="in" type="text" inputmode="text" enterkeyhint="go" placeholder="Type the anatomical name" autocapitalize="off" autocorrect="off" spellcheck="false">
+            <span class="pop" id="pop" role="status" hidden></span>
+          </div>
           <p class="hintline mono" id="hintline" aria-live="polite"></p>
           <div class="row-actions">
             <button type="submit" class="btn primary" id="submit">Check</button>

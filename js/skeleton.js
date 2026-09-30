@@ -195,7 +195,7 @@ export function buildSkeleton() {
     });
     // anchors on rib 4 / 9 / 11 midpoints
     const mid = (i) => { const p = sampleSpline(ribDefs[i].ctrl.map(([l, y]) => m(l, y)), 10)[6]; return p; };
-    groups['true-ribs'].at(...mid(3));
+    groups['true-ribs'].at(...mid(5));
     groups['false-ribs'].at(...mid(8));
     groups['floating-ribs'].at(...mid(10));
 
@@ -243,7 +243,7 @@ export function buildSkeleton() {
     hu.fill(blob(...m(93, 357), 5.5, 7, 0, [1], 8));
     hu.fill(blob(...m(131, 358), 5, 6, 0, [1], 8));
     hu.detail(open(s, [[80, 210], [84, 206], [92, 205]]), 0.9);
-    hu.at(...along(0.4, shaft));
+    hu.at(...along(0.62, shaft));
 
     const ul = bone('ulna', s);
     const ut = tube([m(108, 362), m(110, 380), m(116, 430), m(121, 480), m(124, 504)], [[0, 12], [0.06, 9.6], [0.22, 6.2], [0.7, 4.4], [0.93, 5.6], [1, 6.2]], { n: 30, hit: 14 });
@@ -251,14 +251,14 @@ export function buildSkeleton() {
     ul.fill(blob(...m(124, 508), 6, 5.2, 0, [1], 8));
     ul.fill(blob(...m(120, 514), 2.6, 4.6, 0, [1], 8));
     ul.fill(blob(...m(106, 368), 10, 10, 0, [1, 1.05], 10));
-    ul.at(...along(0.5, ut));
+    ul.at(...along(0.72, ut));
 
     const ra = bone('radius', s);
     const rt = tube([m(124, 384), m(128, 420), m(136, 470), m(146, 503)], [[0, 3.8], [0.08, 4.4], [0.5, 5.6], [0.85, 8], [1, 11.5]], { n: 30, hit: 14 });
     ra.tube(rt);
     ra.fill(blob(...m(124, 378), 8.8, 4.8, s * 0.05, [1], 10));
     ra.fill(blob(...m(151, 508), 3.6, 6, s * -0.4, [1], 8));
-    ra.at(...along(0.5, rt));
+    ra.at(...along(0.3, rt));
   }
 
   /* HAND ---------------------------------------------------------------- */
@@ -310,7 +310,7 @@ export function buildSkeleton() {
         const t = tube([p0, pm, p1], keys, { n: 10, hit: isMc ? 10 : 9, shade: isMc ? 0.4 : 0 });
         (isMc ? mc : ph).tube(t);
         if (fi === 1 && k === 1) ph.at(...pm);
-        if (fi === 1 && k === 0) mc.at(...pm);
+        if (fi === 1 && k === 0) mc.at(...pos(f, d + L * 0.6));
         d += L;
       });
     });
@@ -363,14 +363,14 @@ export function buildSkeleton() {
     ti.fill(blob(...m(57, 697), 13, 6.8, 0, [1], 10));
     ti.fill(blob(...m(28, 903), 6.5, 9, -0.15 * s, [1], 8));
     ti.detail(open(s, [[44, 694], [44, 689]]), 1.2);
-    ti.at(...along(0.4, tt));
+    ti.at(...along(0.3, tt));
 
     const fi = bone('fibula', s);
     const ft = tube([m(65, 716), m(63, 780), m(60, 850), m(58, 892)], [[0, 5.5], [0.1, 3.6], [0.6, 3.4], [0.9, 5], [1, 7]], { n: 26, hit: 12 });
     fi.tube(ft);
     fi.fill(blob(...m(66, 708), 7, 9, 0, [1], 9));
     fi.fill(blob(...m(58, 902), 6.5, 14, 0.08 * s, [1], 10));
-    fi.at(...along(0.5, ft));
+    fi.at(...along(0.75, ft));
   }
 
   /* FOOT ---------------------------------------------------------------- */
