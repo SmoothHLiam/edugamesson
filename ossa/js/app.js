@@ -158,7 +158,7 @@ function goto(target, ms = 720) {
   cam.home = false;
   const t0 = performance.now();
   const step = (t) => {
-    const u = Math.min(1, (t - t0) / ms);
+    const u = clamp((t - t0) / ms, 0, 1);
     const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
     cam.cx = from.cx + (target.cx - from.cx) * e;
     cam.cy = from.cy + (target.cy - from.cy) * e;
@@ -293,6 +293,11 @@ function updatePin() {
   const v = viewRect(), b = box();
   const sx = ((pin.anchor[0] - v.x) / v.w) * b.width;
   const sy = ((pin.anchor[1] - v.y) / v.h) * b.height;
+  if (!Number.isFinite(sx) || !Number.isFinite(sy) || Math.abs(sx) > 1e5 || Math.abs(sy) > 1e5) {
+    pins.dataset.off = '1';
+    chip.style.visibility = 'hidden';
+    return;
+  }
   const off = sx < -10 || sx > b.width + 10 || sy < -10 || sy > b.height + 10;
   pins.dataset.off = off ? '1' : '0';
   chip.style.visibility = off ? 'hidden' : 'visible';
@@ -820,9 +825,11 @@ function updateDots() {
   dots.forEach((d) => {
     const { g, a } = d;
     const x = ((a[0] - v.x) / v.w) * b.width, y = ((a[1] - v.y) / v.h) * b.height;
+    const off = !Number.isFinite(x) || !Number.isFinite(y) || x < -20 || x > b.width + 20 || y < -20 || y > b.height + 20;
+    g.style.display = off ? 'none' : '';
+    if (off) return;
     d.x = x; d.y = y;
     g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
-    g.style.display = x < -20 || x > b.width + 20 || y < -20 || y > b.height + 20 ? 'none' : '';
   });
 }
 /** The pin nearest the pointer wins, so overlapping pins never steal each other's clicks. */

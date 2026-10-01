@@ -1,8 +1,12 @@
-# Ossa
+# Education Game Station
+
+A small station for short study games. The homepage is at `/` and the first game, Ossa, is at `/ossa`.
+No build step and no dependencies: plain HTML, CSS and ES modules, so it deploys to Vercel as a static site.
+
+## Ossa
 
 A quiet, fast game for learning the bones of the human body. Name, choose or locate
-bones on an anatomical plate. No build step and no dependencies: plain HTML, CSS and
-ES modules, so it deploys to Vercel as a static site.
+bones on an anatomical plate.
 
 ## Play
 
@@ -38,20 +42,36 @@ npx serve .
 python3 -m http.server 8000
 ```
 
+Then open `/` for the homepage and `/ossa` for the game.
+
 ## Deploy
 
 Import the repository into Vercel with the **Other** framework preset, no build command and no
-output directory. `vercel.json` only adds caching and security headers.
+output directory. `vercel.json` turns on clean URLs (so the game lives at `/ossa`) and adds
+caching and security headers. Pages use root-absolute asset paths because `/ossa` and `/ossa/`
+resolve relative URLs differently.
+
+## Layout
+
+```
+index.html, home.css, home.js   the homepage (the hero plate reuses the game's skeleton drawing)
+assets/                         homepage images
+ossa/                           the game: index.html, styles.css, js/, favicon.svg, og.png
+fonts/                          self-hosted Instrument Serif, Geist and Geist Mono, shared by both
+og.png, favicon.svg             homepage share image and icon
+```
+
+Adding a game means adding a folder next to `ossa/` and a card in the homepage's Games section.
 
 ## How it is put together
 
-- `js/geom.js`: spline, tapered-tube and blob helpers used to author the skeleton.
-- `js/skeleton.js`: the anterior-view skeleton as vector geometry. Paired bones are defined once
+- `ossa/js/geom.js`: spline, tapered-tube and blob helpers used to author the skeleton.
+- `ossa/js/skeleton.js`: the anterior-view skeleton as vector geometry. Paired bones are defined once
   and mirrored. Each drawn bone is a group tagged `data-bone`.
-- `js/data.js`: names, notes and the bone hierarchy. `syn` holds accepted anatomical synonyms (cranium, zygoma);
+- `ossa/js/data.js`: names, notes and the bone hierarchy. `syn` holds accepted anatomical synonyms (cranium, zygoma);
   `everyday` holds folk names that are never accepted and feed the Type-mode hint. `level`, `splitAt` and `parent`
   fold fine bones (say, the scaphoid) into their parent (carpals) at lower difficulties, which is how
   one drawing serves all three sets. Also holds the typed-answer matcher (synonyms, plurals, typo tolerance).
-- `js/app.js`: camera (pan, zoom, framing), pins, modes, scoring, timer and results.
-- `styles.css`: the glass surfaces. Blur, hairline borders and directional inner highlights only:
+- `ossa/js/app.js`: camera (pan, zoom, framing), pins, modes, scoring, timer and results.
+- `ossa/styles.css`: the glass surfaces. Blur, hairline borders and directional inner highlights only:
   no gradients.

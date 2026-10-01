@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ossa · Label the skeleton · Education Game Station</title>
+  <meta name="description" content="Learn the bones of the human body by naming, choosing or locating each one on an anatomical plate. Fifteen to forty-eight bones, three difficulty levels.">
+  <meta name="theme-color" content="#07090a">
+  <meta property="og:title" content="Ossa · Label the skeleton">
+  <meta property="og:description" content="Name, choose or locate the bones of the human skeleton. A quiet, fast study game.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/ossa/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/ossa/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/geist-normal-300-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/instrument-serif-normal-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/ossa/styles.css">
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <svg class="sk ghost" id="ghost" viewBox="150 0 600 640" preserveAspectRatio="xMidYMid slice"></svg>
+    <div class="grain"></div>
+  </div>
+
+  <div class="app" id="app" data-phase="idle" data-view="panel">
+    <header class="bar glass">
+      <div class="brand">
+        <a class="home-link" href="/" aria-label="Education Game Station home" title="Education Game Station">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15.2" cy="9.4" r="2.6" fill="currentColor"/></svg>
+        </a>
+        <span class="wordmark">Ossa</span>
+        <span class="tagline">Label the skeleton</span>
+      </div>
+      <button class="bones-toggle" id="toggle-list" type="button" aria-pressed="false">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
+        <span>Bones</span>
+      </button>
+      <dl class="stats" aria-label="Session stats">
+        <div><dt id="st-score-l">Score</dt><dd id="st-score">0</dd></div>
+        <div id="st-streak-w"><dt>Streak</dt><dd id="st-streak">0</dd></div>
+        <div><dt id="st-time-l">Time</dt><dd id="st-time">0:00</dd></div>
+      </dl>
+    </header>
+
+    <aside class="list glass" id="list" aria-label="Bones in this set">
+      <div class="list-head">
+        <p class="eyebrow">Bones</p>
+        <p class="count" id="list-count">15</p>
+      </div>
+      <div class="list-body" id="list-body"></div>
+    </aside>
+
+    <main class="stage glass" id="stage">
+      <svg class="sk" id="sk" viewBox="0 0 900 1032" role="img" aria-label="Human skeleton, anterior view" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg class="pins" id="pins" aria-hidden="true">
+        <path class="pin-line" id="pin-line" d=""/>
+        <circle class="pin-ring" id="pin-ring" r="9"/>
+        <circle class="pin-dot" id="pin-dot" r="3.2"/>
+        <g id="dots"></g>
+      </svg>
+      <div class="chip" id="chip" hidden><b id="chip-n"></b><span id="chip-t"></span></div>
+      <div class="tip" id="tip" hidden></div>
+
+      <div class="readout" id="readout" hidden>
+        <p class="eyebrow" id="ro-meta"></p>
+        <h2 id="ro-name"></h2>
+        <p id="ro-note"></p>
+      </div>
+
+      <p class="plate" aria-hidden="true"><span>Plate I</span><span>Anterior view</span></p>
+
+      <div class="zoom" role="group" aria-label="Zoom">
+        <button type="button" id="z-in" aria-label="Zoom in"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+        <button type="button" id="z-out" aria-label="Zoom out"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
+        <button type="button" id="z-fit" aria-label="Fit whole skeleton"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/></svg></button>
+      </div>
+    </main>
+
+    <section class="panel glass" id="panel">
+      <!-- SETUP -->
+      <div class="view" id="v-setup">
+        <p class="eyebrow">New session</p>
+        <h1 class="title">Label the <em>skeleton</em></h1>
+        <p class="lede">Name each highlighted bone from memory. Hover the figure first if you want to study.</p>
+
+        <div class="field">
+          <p class="eyebrow" id="l-mode">Mode</p>
+          <div class="seg" role="radiogroup" aria-labelledby="l-mode" data-key="mode">
+            <span class="thumb"></span>
+            <button type="button" role="radio" data-v="type">Type</button>
+            <button type="button" role="radio" data-v="choose">Choose</button>
+            <button type="button" role="radio" data-v="locate">Locate</button>
+            <button type="button" role="radio" data-v="legacy">Legacy</button>
+          </div>
+          <p class="hint" id="mode-hint"></p>
+        </div>
+
+        <div class="field">
+          <p class="eyebrow" id="l-set">Set</p>
+          <div class="seg" role="radiogroup" aria-labelledby="l-set" data-key="level">
+            <span class="thumb"></span>
+            <button type="button" role="radio" data-v="1">Core <i data-n="1"></i></button>
+            <button type="button" role="radio" data-v="2">Complete <i data-n="2"></i></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <p class="eyebrow" id="l-region">Region</p>
+          <div class="chips" role="radiogroup" aria-labelledby="l-region" data-key="region"></div>
+        </div>
+
+        <div class="field" id="f-clock">
+          <p class="eyebrow" id="l-clock">Clock</p>
+          <div class="seg" role="radiogroup" aria-labelledby="l-clock" data-key="clock">
+            <span class="thumb"></span>
+            <button type="button" role="radio" data-v="0">Untimed</button>
+            <button type="button" role="radio" data-v="120">2 min</button>
+            <button type="button" role="radio" data-v="300">5 min</button>
+          </div>
+        </div>
+
+        <div class="cta">
+          <button type="button" class="btn primary" id="begin"><span>Begin</span><span class="mono" id="begin-n"></span></button>
+          <p class="best" id="best"></p>
+        </div>
+      </div>
+
+      <!-- QUESTION -->
+      <div class="view" id="v-ask" hidden>
+        <div class="qhead">
+          <p class="mono" id="qcount">01 / 15</p>
+          <button type="button" class="link" id="end">End session</button>
+        </div>
+        <div class="progress" aria-hidden="true"><i id="qprog"></i></div>
+
+        <dl class="hud" id="hud" hidden>
+          <div><dt>Remaining</dt><dd id="h-rem">0</dd></div>
+          <div><dt>Correct</dt><dd id="h-ok">0</dd></div>
+          <div><dt>Wrong</dt><dd id="h-bad">0</dd></div>
+          <div><dt>Accuracy</dt><dd id="h-acc">0%</dd></div>
+        </dl>
+
+        <p class="prompt" id="prompt"></p>
+
+        <form class="answer" id="a-type" autocomplete="off">
+          <label class="sr" for="in">Bone name</label>
+          <div class="inputwrap">
+            <input class="input" id="in" type="text" inputmode="text" enterkeyhint="go" placeholder="Type the anatomical name" autocapitalize="off" autocorrect="off" spellcheck="false">
+            <span class="pop" id="pop" role="status" hidden></span>
+          </div>
+          <p class="hintline mono" id="hintline" aria-live="polite"></p>
+          <div class="row-actions">
+            <button type="submit" class="btn primary" id="submit">Check</button>
+            <button type="button" class="btn ghost" id="hint">Hint</button>
+            <button type="button" class="btn ghost" id="skip">Skip</button>
+          </div>
+        </form>
+
+        <div class="answer" id="a-choose" hidden>
+          <ol class="opts" id="opts"></ol>
+          <div class="row-actions"><button type="button" class="btn ghost" id="skip-c">Skip</button></div>
+        </div>
+
+        <div class="answer" id="a-locate" hidden>
+          <p class="target" id="loc-name"></p>
+          <p class="hint" id="loc-hint" aria-live="polite">Click the bone on the figure. Scroll to zoom, drag to pan.</p>
+          <div class="row-actions"><button type="button" class="btn ghost" id="skip-l">Skip</button></div>
+        </div>
+
+        <div class="feedback" id="fb" hidden aria-live="polite">
+          <p class="verdict" id="fb-verdict"></p>
+          <p class="fb-name" id="fb-name"></p>
+          <p class="fb-note" id="fb-note"></p>
+          <button type="button" class="btn primary" id="next"><span id="next-t">Next</span><kbd>Enter</kbd></button>
+        </div>
+
+        <p class="foot mono" id="foot"></p>
+      </div>
+
+      <!-- RESULT -->
+      <div class="view" id="v-result" hidden>
+        <p class="eyebrow" id="r-eyebrow">Session complete</p>
+        <p class="bignum" id="r-score">0</p>
+        <p class="lede" id="r-line"></p>
+        <dl class="grid-stats">
+          <div><dt>Accuracy</dt><dd id="r-acc">0%</dd></div>
+          <div><dt>Time</dt><dd id="r-time">0:00</dd></div>
+          <div><dt>Best streak</dt><dd id="r-streak">0</dd></div>
+          <div><dt>Hints used</dt><dd id="r-hints">0</dd></div>
+        </dl>
+        <div id="r-missed-wrap">
+          <p class="eyebrow">To review</p>
+          <div class="chips" id="r-missed"></div>
+        </div>
+        <div class="cta stack">
+          <button type="button" class="btn primary" id="again">Play again</button>
+          <button type="button" class="btn ghost" id="retry">Retry missed</button>
+          <button type="button" class="btn ghost" id="back">Change settings</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <noscript><p style="position:fixed;inset:auto 16px 16px;color:#eceeea;font:14px system-ui">Ossa needs JavaScript to draw the skeleton and run the quiz.</p></noscript>
+  <script type="module" src="/ossa/js/app.js"></script>
+</body>
+</html>

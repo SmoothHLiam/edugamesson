@@ -3,202 +3,219 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Ossa · Label the skeleton</title>
-  <meta name="description" content="Learn the bones of the human body by naming, choosing or locating each one on an anatomical plate. Fifteen to forty-eight bones, three difficulty levels.">
+  <title>Education Game Station · Study games for the classroom</title>
+  <meta name="description" content="Short browser games for the facts students need to know cold. One subject per game, no accounts, no ads. Now playing: Ossa, a labelling game for the human skeleton.">
   <meta name="theme-color" content="#07090a">
-  <meta property="og:title" content="Ossa · Label the skeleton">
-  <meta property="og:description" content="Name, choose or locate the bones of the human skeleton. A quiet, fast study game.">
+  <meta property="og:title" content="Education Game Station">
+  <meta property="og:description" content="Short browser games for the facts students need to know cold. One subject per game, no accounts, no ads.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="og.png">
+  <meta property="og:image" content="/og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="fonts/geist-normal-300-700.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="fonts/instrument-serif-normal-400.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/geist-normal-300-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/instrument-serif-normal-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/home.css">
 </head>
 <body>
-  <div class="bg" aria-hidden="true">
-    <svg class="sk ghost" id="ghost" viewBox="150 0 600 640" preserveAspectRatio="xMidYMid slice"></svg>
-    <div class="grain"></div>
-  </div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15.2" cy="9.4" r="2.6" fill="currentColor"/></symbol>
+  </svg>
+  <div class="grain" aria-hidden="true"></div>
+  <a class="skip" href="#main">Skip to content</a>
 
-  <div class="app" id="app" data-phase="idle" data-view="panel">
-    <header class="bar glass">
-      <div class="brand">
-        <span class="wordmark">Ossa</span>
-        <span class="tagline">Label the skeleton</span>
-      </div>
-      <button class="bones-toggle" id="toggle-list" type="button" aria-pressed="false">
-        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
-        <span>Bones</span>
-      </button>
-      <dl class="stats" aria-label="Session stats">
-        <div><dt id="st-score-l">Score</dt><dd id="st-score">0</dd></div>
-        <div id="st-streak-w"><dt>Streak</dt><dd id="st-streak">0</dd></div>
-        <div><dt id="st-time-l">Time</dt><dd id="st-time">0:00</dd></div>
-      </dl>
-    </header>
+  <header class="nav">
+    <div class="wrap nav-in">
+      <a class="brand" href="/" aria-label="Education Game Station, home">
+        <svg class="mark" width="26" height="26" aria-hidden="true"><use href="#mark"/></svg>
+        <span>Education Game Station</span>
+      </a>
+      <nav class="links" aria-label="Primary">
+        <a href="#games">Games</a>
+        <a href="#approach">Approach</a>
+        <a href="#classrooms">Classrooms</a>
+        <a href="#faq">Questions</a>
+      </nav>
+      <a class="btn primary sm" href="/ossa">Play Ossa</a>
+    </div>
+  </header>
 
-    <aside class="list glass" id="list" aria-label="Bones in this set">
-      <div class="list-head">
-        <p class="eyebrow">Bones</p>
-        <p class="count" id="list-count">15</p>
-      </div>
-      <div class="list-body" id="list-body"></div>
-    </aside>
-
-    <main class="stage glass" id="stage">
-      <svg class="sk" id="sk" viewBox="0 0 900 1032" role="img" aria-label="Human skeleton, anterior view" preserveAspectRatio="xMidYMid meet"></svg>
-      <svg class="pins" id="pins" aria-hidden="true">
-        <path class="pin-line" id="pin-line" d=""/>
-        <circle class="pin-ring" id="pin-ring" r="9"/>
-        <circle class="pin-dot" id="pin-dot" r="3.2"/>
-        <g id="dots"></g>
-      </svg>
-      <div class="chip" id="chip" hidden><b id="chip-n"></b><span id="chip-t"></span></div>
-      <div class="tip" id="tip" hidden></div>
-
-      <div class="readout" id="readout" hidden>
-        <p class="eyebrow" id="ro-meta"></p>
-        <h2 id="ro-name"></h2>
-        <p id="ro-note"></p>
-      </div>
-
-      <p class="plate" aria-hidden="true"><span>Plate I</span><span>Anterior view</span></p>
-
-      <div class="zoom" role="group" aria-label="Zoom">
-        <button type="button" id="z-in" aria-label="Zoom in"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
-        <button type="button" id="z-out" aria-label="Zoom out"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h10"/></svg></button>
-        <button type="button" id="z-fit" aria-label="Fit whole skeleton"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/></svg></button>
-      </div>
-    </main>
-
-    <section class="panel glass" id="panel">
-      <!-- SETUP -->
-      <div class="view" id="v-setup">
-        <p class="eyebrow">New session</p>
-        <h1 class="title">Label the <em>skeleton</em></h1>
-        <p class="lede">Name each highlighted bone from memory. Hover the figure first if you want to study.</p>
-
-        <div class="field">
-          <p class="eyebrow" id="l-mode">Mode</p>
-          <div class="seg" role="radiogroup" aria-labelledby="l-mode" data-key="mode">
-            <span class="thumb"></span>
-            <button type="button" role="radio" data-v="type">Type</button>
-            <button type="button" role="radio" data-v="choose">Choose</button>
-            <button type="button" role="radio" data-v="locate">Locate</button>
-            <button type="button" role="radio" data-v="legacy">Legacy</button>
-          </div>
-          <p class="hint" id="mode-hint"></p>
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">Study games for the classroom</p>
+        <h1>Study games that ask for the answer.</h1>
+        <p class="lede">Education Game Station makes short browser games for the facts students need to know cold. Each game covers one subject, runs in a few minutes and needs no account.</p>
+        <div class="cta-row">
+          <a class="btn primary" href="/ossa">Play Ossa</a>
+          <a class="btn ghost" href="#approach">How the games work</a>
         </div>
-
-        <div class="field">
-          <p class="eyebrow" id="l-set">Set</p>
-          <div class="seg" role="radiogroup" aria-labelledby="l-set" data-key="level">
-            <span class="thumb"></span>
-            <button type="button" role="radio" data-v="1">Core <i data-n="1"></i></button>
-            <button type="button" role="radio" data-v="2">Complete <i data-n="2"></i></button>
-          </div>
-        </div>
-
-        <div class="field">
-          <p class="eyebrow" id="l-region">Region</p>
-          <div class="chips" role="radiogroup" aria-labelledby="l-region" data-key="region"></div>
-        </div>
-
-        <div class="field" id="f-clock">
-          <p class="eyebrow" id="l-clock">Clock</p>
-          <div class="seg" role="radiogroup" aria-labelledby="l-clock" data-key="clock">
-            <span class="thumb"></span>
-            <button type="button" role="radio" data-v="0">Untimed</button>
-            <button type="button" role="radio" data-v="120">2 min</button>
-            <button type="button" role="radio" data-v="300">5 min</button>
-          </div>
-        </div>
-
-        <div class="cta">
-          <button type="button" class="btn primary" id="begin"><span>Begin</span><span class="mono" id="begin-n"></span></button>
-          <p class="best" id="best"></p>
-        </div>
-      </div>
-
-      <!-- QUESTION -->
-      <div class="view" id="v-ask" hidden>
-        <div class="qhead">
-          <p class="mono" id="qcount">01 / 15</p>
-          <button type="button" class="link" id="end">End session</button>
-        </div>
-        <div class="progress" aria-hidden="true"><i id="qprog"></i></div>
-
-        <dl class="hud" id="hud" hidden>
-          <div><dt>Remaining</dt><dd id="h-rem">0</dd></div>
-          <div><dt>Correct</dt><dd id="h-ok">0</dd></div>
-          <div><dt>Wrong</dt><dd id="h-bad">0</dd></div>
-          <div><dt>Accuracy</dt><dd id="h-acc">0%</dd></div>
+        <dl class="meta">
+          <div><dt>Available now</dt><dd>Ossa, the human skeleton</dd></div>
+          <div><dt>Cost</dt><dd>Free to play</dd></div>
+          <div><dt>Accounts</dt><dd>None required</dd></div>
         </dl>
-
-        <p class="prompt" id="prompt"></p>
-
-        <form class="answer" id="a-type" autocomplete="off">
-          <label class="sr" for="in">Bone name</label>
-          <div class="inputwrap">
-            <input class="input" id="in" type="text" inputmode="text" enterkeyhint="go" placeholder="Type the anatomical name" autocapitalize="off" autocorrect="off" spellcheck="false">
-            <span class="pop" id="pop" role="status" hidden></span>
-          </div>
-          <p class="hintline mono" id="hintline" aria-live="polite"></p>
-          <div class="row-actions">
-            <button type="submit" class="btn primary" id="submit">Check</button>
-            <button type="button" class="btn ghost" id="hint">Hint</button>
-            <button type="button" class="btn ghost" id="skip">Skip</button>
-          </div>
-        </form>
-
-        <div class="answer" id="a-choose" hidden>
-          <ol class="opts" id="opts"></ol>
-          <div class="row-actions"><button type="button" class="btn ghost" id="skip-c">Skip</button></div>
-        </div>
-
-        <div class="answer" id="a-locate" hidden>
-          <p class="target" id="loc-name"></p>
-          <p class="hint" id="loc-hint" aria-live="polite">Click the bone on the figure. Scroll to zoom, drag to pan.</p>
-          <div class="row-actions"><button type="button" class="btn ghost" id="skip-l">Skip</button></div>
-        </div>
-
-        <div class="feedback" id="fb" hidden aria-live="polite">
-          <p class="verdict" id="fb-verdict"></p>
-          <p class="fb-name" id="fb-name"></p>
-          <p class="fb-note" id="fb-note"></p>
-          <button type="button" class="btn primary" id="next"><span id="next-t">Next</span><kbd>Enter</kbd></button>
-        </div>
-
-        <p class="foot mono" id="foot"></p>
       </div>
 
-      <!-- RESULT -->
-      <div class="view" id="v-result" hidden>
-        <p class="eyebrow" id="r-eyebrow">Session complete</p>
-        <p class="bignum" id="r-score">0</p>
-        <p class="lede" id="r-line"></p>
-        <dl class="grid-stats">
-          <div><dt>Accuracy</dt><dd id="r-acc">0%</dd></div>
-          <div><dt>Time</dt><dd id="r-time">0:00</dd></div>
-          <div><dt>Best streak</dt><dd id="r-streak">0</dd></div>
-          <div><dt>Hints used</dt><dd id="r-hints">0</dd></div>
-        </dl>
-        <div id="r-missed-wrap">
-          <p class="eyebrow">To review</p>
-          <div class="chips" id="r-missed"></div>
+      <figure class="plate glass">
+        <svg class="sk" id="plate" viewBox="90 0 720 1032" role="img" aria-label="Front view of the human skeleton from Ossa, labelled with eight bone names. The femur is highlighted."></svg>
+        <figcaption class="mono"><span>Plate I</span><span>Anterior view</span><span>From Ossa</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- GAMES -->
+    <section class="sec wrap" id="games" aria-labelledby="games-h">
+      <p class="sec-label mono"><span>01</span> Games</p>
+      <div class="sec-body">
+        <h2 id="games-h">One subject per game.</h2>
+        <p class="intro">Every title takes a single body of knowledge and builds the whole game around learning it.</p>
+
+        <article class="title glass">
+          <div class="title-head">
+            <div>
+              <p class="eyebrow">Available now · Anatomy</p>
+              <h3>Ossa</h3>
+              <p class="sub mono">Label the skeleton</p>
+            </div>
+            <div class="title-copy">
+              <p>Ossa is a labelling game for the human skeleton. Students name a highlighted bone, choose from four options, or find a named bone on the figure. The Core set is the 26 bones on a class master sheet. Complete goes to 48 and splits the cranium, ribs, wrist, ankle and pelvis into their parts.</p>
+              <a class="btn primary" href="/ossa">Play Ossa</a>
+            </div>
+          </div>
+          <figure class="shot">
+            <img src="/assets/ossa-type-mode.jpg" width="1920" height="1200" loading="lazy" decoding="async" alt="The Ossa game in Type mode. The humerus is highlighted on a zoomed view of the shoulder, and a small popup beside the answer box reads: hint, upper arm bone.">
+            <figcaption>Ossa in Type mode. A wrong first answer gets one more try and a hint.</figcaption>
+          </figure>
+        </article>
+
+        <div class="detail-grid">
+          <div>
+            <h3 class="mini mono">Four ways to play</h3>
+            <dl class="rows">
+              <div><dt>Type</dt><dd>Name the highlighted bone. A wrong answer gets one more try and a hint.</dd></div>
+              <div><dt>Choose</dt><dd>Pick the right name from four options.</dd></div>
+              <div><dt>Locate</dt><dd>Find the named bone on the figure. A second try scores less.</dd></div>
+              <div><dt>Legacy</dt><dd>The classic click-the-pin format. One click per bone, ranked by accuracy and then time.</dd></div>
+            </dl>
+          </div>
+          <div>
+            <h3 class="mini mono">Details</h3>
+            <dl class="rows">
+              <div><dt>Sets</dt><dd>Core, 26 bones. Complete, 48 bones.</dd></div>
+              <div><dt>Options</dt><dd>Body region, plus an optional 2 or 5 minute clock.</dd></div>
+              <div><dt>Devices</dt><dd>Desktop, tablet and phone browsers.</dd></div>
+              <div><dt>Account</dt><dd>None. Settings and best scores stay in the browser.</dd></div>
+            </dl>
+          </div>
         </div>
-        <div class="cta stack">
-          <button type="button" class="btn primary" id="again">Play again</button>
-          <button type="button" class="btn ghost" id="retry">Retry missed</button>
-          <button type="button" class="btn ghost" id="back">Change settings</button>
+
+        <p class="more">More titles are planned. Each will keep the same format: one subject, short sessions and no account.</p>
+      </div>
+    </section>
+
+    <!-- APPROACH -->
+    <section class="sec wrap" id="approach" aria-labelledby="approach-h">
+      <p class="sec-label mono"><span>02</span> Approach</p>
+      <div class="sec-body">
+        <h2 id="approach-h">Practice that asks before it tells.</h2>
+        <p class="intro">The games follow four rules.</p>
+        <ol class="rules">
+          <li>
+            <span class="num mono">01</span>
+            <h3>Ask first.</h3>
+            <p>Students produce the answer before they see any options. Ossa leads with typing and offers multiple choice for when a student needs it.</p>
+          </li>
+          <li>
+            <span class="num mono">02</span>
+            <h3>Explain every miss.</h3>
+            <p>After each answer the game shows the correct name and a one-line note, so a wrong answer still teaches something.</p>
+          </li>
+          <li>
+            <span class="num mono">03</span>
+            <h3>Follow the syllabus.</h3>
+            <p>Content comes from a reference sheet, not a guess at what will be on the test. Ossa's Core set matches a class master sheet bone for bone.</p>
+          </li>
+          <li>
+            <span class="num mono">04</span>
+            <h3>Keep sessions short.</h3>
+            <p>A run takes a few minutes. Students can stop at any point, then start again with only the bones they missed.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- CLASSROOMS -->
+    <section class="sec wrap" id="classrooms" aria-labelledby="class-h">
+      <p class="sec-label mono"><span>03</span> Classrooms</p>
+      <div class="sec-body">
+        <h2 id="class-h">Nothing to set up.</h2>
+        <p class="intro">Send students to the game's address and they are playing. There is no class list to build and no software to install.</p>
+        <dl class="rows two">
+          <div><dt>No accounts</dt><dd>Students do not sign up or log in.</dd></div>
+          <div><dt>No tracking</dt><dd>The site loads no analytics and no third-party scripts. Settings and best scores stay in the browser on that device.</dd></div>
+          <div><dt>Any device</dt><dd>Runs in current desktop and mobile browsers, including Chromebooks and tablets.</dd></div>
+          <div><dt>Matched to the lesson</dt><dd>Choose the set, the body region and an optional clock before each session, from a single region to the whole skeleton.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="sec wrap" id="faq" aria-labelledby="faq-h">
+      <p class="sec-label mono"><span>04</span> Questions</p>
+      <div class="sec-body">
+        <h2 id="faq-h">Common questions.</h2>
+        <div class="faq">
+          <details>
+            <summary>Is it free?</summary>
+            <p>Ossa is free to play. There are no accounts, ads or paywalls.</p>
+          </details>
+          <details>
+            <summary>Does it work on phones and tablets?</summary>
+            <p>Yes. The layout adapts to small screens, and the figure zooms with a scroll wheel, a pinch or the on-screen buttons.</p>
+          </details>
+          <details>
+            <summary>What happens to student data?</summary>
+            <p>There are no accounts, so nothing identifies a student. Settings and best scores are saved only in the browser on that device. Clearing the site's data removes them.</p>
+          </details>
+          <details>
+            <summary>Which bones does Ossa cover?</summary>
+            <p>Core is the 26 bones on a class master sheet, from the cranium to the phalanges of the foot. Complete goes to 48 and splits the cranium, ribs, wrist, ankle and pelvis into their parts.</p>
+          </details>
+          <details>
+            <summary>Will there be more games?</summary>
+            <p>More titles are planned. Each will keep the same format: one subject, short sessions and no account.</p>
+          </details>
         </div>
       </div>
     </section>
-  </div>
+  </main>
 
-  <noscript><p style="position:fixed;inset:auto 16px 16px;color:#eceeea;font:14px system-ui">Ossa needs JavaScript to draw the skeleton and run the quiz.</p></noscript>
-  <script type="module" src="js/app.js"></script>
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div class="foot-brand">
+        <a class="brand" href="/" aria-label="Education Game Station, home">
+          <svg class="mark" width="26" height="26" aria-hidden="true"><use href="#mark"/></svg>
+          <span>Education Game Station</span>
+        </a>
+        <p>Short browser games for the facts students need to know cold.</p>
+      </div>
+      <nav class="foot-col" aria-label="Games">
+        <h2 class="mono">Games</h2>
+        <a href="/ossa">Ossa</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h2 class="mono">Company</h2>
+        <a href="#approach">Approach</a>
+        <a href="#classrooms">Classrooms</a>
+        <a href="#faq">Questions</a>
+      </nav>
+    </div>
+    <div class="wrap foot-base mono">
+      <span>© 2026 Education Game Station</span>
+      <span>No accounts. No ads. No tracking.</span>
+    </div>
+  </footer>
+
+  <script type="module" src="/home.js"></script>
 </body>
 </html>
