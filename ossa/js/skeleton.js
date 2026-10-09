@@ -4,7 +4,7 @@
 
 import {
   CX, mapper, smoothPath, sampleSpline, tube, blob, squircle, sym, loop, open, frame, polyPath,
-} from './geom.js';
+} from '/engine/geom.js';
 
 export const VIEW = { w: 900, h: 1032 };
 

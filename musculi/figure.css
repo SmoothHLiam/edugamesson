@@ -1,0 +1,22 @@
+/* Muscle plate paint. Tones reuse the engine's knock-out outline, shade and detail rules. */
+.sk {
+  --muscle: #c9a9a2;
+  --muscle-2: #b99590;
+  --bone-shade: #a07f79;
+  --bone-detail: #6b4d49;
+  --tendon: #e8e0cf;
+  --skin: #4b3b3b;
+  --skin-2: #3b3234;
+}
+.sk .f-m { fill: var(--muscle); }
+.sk .f-m2 { fill: var(--muscle-2); }
+.sk .f-tendon { fill: var(--tendon); }
+.sk .f-skin { fill: var(--skin); }
+.sk .f-skin2 { fill: var(--skin-2); }
+.sk .bone[data-inert] .o { stroke: var(--cavity); fill: var(--cavity); stroke-width: 1.6px; }
+.sk .bone[data-inert] { pointer-events: none; }
+.sk .hl .f-m2 { fill: var(--hi); }
+.sk .bone[data-scope="0"] { opacity: 0.3; }
+.sk.ghost .f-m, .sk.ghost .f-m2, .sk.ghost .f-tendon { fill: rgba(233, 227, 210, 0.14); }
+.sk.ghost .f-skin, .sk.ghost .f-skin2 { fill: rgba(233, 227, 210, 0.05); }
+.sk.ghost .bone[data-inert] .o { display: none; }

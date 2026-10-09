@@ -1,5 +1,8 @@
-import { buildSkeleton, renderMarkup } from './skeleton.js';
-import { BY_ID, LEVELS, REGIONS, resolve, questionSet, judge, everydayHit } from './data.js';
+// Shared game engine. Each game page names its config module in <body data-game>.
+const G = await import(document.body.dataset.game);
+const { BY_ID, LEVELS, REGIONS, resolve, questionSet, judge, everydayHit } = G.data;
+const { noun, nouns } = G.text;
+const P = G.id; // storage prefix
 
 /* ------------------------------------------------------------------ */
 /* helpers                                                              */
@@ -34,14 +37,8 @@ const store = {
 /* ------------------------------------------------------------------ */
 /* state                                                                */
 /* ------------------------------------------------------------------ */
-// v2 folded Extended into Core and renumbered Complete from 3 to 2, so old saved setups and bests no longer apply
-const saved = store.get('ossa.cfg') || {};
-if (store.get('ossa.v') !== 2) {
-  if (saved.level === 3) saved.level = 2; else if (saved.level === 2) saved.level = 1;
-  try { Object.keys(localStorage).filter((k) => k.startsWith('ossa.best.')).forEach((k) => localStorage.removeItem(k)); } catch { /* storage unavailable */ }
-  store.set('ossa.cfg', saved);
-  store.set('ossa.v', 2);
-}
+const saved = store.get(`${P}.cfg`) || {};
+G.migrate?.(saved, store, P);
 const cfg = { mode: 'type', level: 1, region: 'all', clock: 0, ...saved };
 if (!LEVELS[cfg.level] || !REGIONS[cfg.region] || ![0, 120, 300].includes(cfg.clock) || !['type', 'choose', 'locate', 'legacy'].includes(cfg.mode)) {
   Object.assign(cfg, { mode: 'type', level: 1, region: 'all', clock: 0 });
@@ -73,8 +70,8 @@ const listBody = $('#list-body');
 /* ------------------------------------------------------------------ */
 /* skeleton                                                             */
 /* ------------------------------------------------------------------ */
-const build = buildSkeleton();
-const markup = renderMarkup(build);
+const build = G.buildFigure();
+const markup = G.renderMarkup(build);
 sk.innerHTML = `<g class="layer-bones">${markup.bones}</g><g class="layer-hl"></g><g class="layer-rims">${markup.rims}</g><g class="layer-voids">${markup.voids}</g>`;
 ghost.innerHTML = `<g class="layer-bones">${markup.bones}</g>`;
 const layerBones = $('.layer-bones', sk);
@@ -85,7 +82,7 @@ const anchors = {};
 build.bones.forEach((r) => {
   if (r.anchor && r.side <= 0 && !anchors[r.id]) anchors[r.id] = r.anchor;
 });
-const ANCHOR_VIA = { cranium: 'frontal', sternum: 'sternal-body', ribs: 'true-ribs', pelvis: 'ilium', carpals: 'scaphoid', tarsals: 'navicular' };
+const ANCHOR_VIA = G.anchorVia || {};
 function anchorFor(key) {
   if (anchors[key]) return anchors[key];
   if (anchors[ANCHOR_VIA[key]]) return anchors[ANCHOR_VIA[key]];
@@ -97,6 +94,7 @@ function anchorFor(key) {
 function applyLevel() {
   groups.forEach((g) => {
     const id = g.dataset.bone;
+    if (g.dataset.inert) { g.dataset.key = ''; g.dataset.scope = '1'; return; }
     const eff = resolve(id, cfg.level);
     g.dataset.key = eff || id;
     const ref = BY_ID[eff || id];
@@ -123,7 +121,8 @@ function highlight(key, cls = '') {
 /* ------------------------------------------------------------------ */
 /* camera                                                               */
 /* ------------------------------------------------------------------ */
-const cam = { cx: 450, cy: 516, w: 700, home: true };
+const V = G.view;
+const cam = { cx: V.cx, cy: V.cy, w: 700, home: true };
 let camAnim = 0;
 const box = () => stage.getBoundingClientRect();
 
@@ -135,14 +134,14 @@ function viewRect() {
 function homeCam() {
   const b = box();
   const asp = b.width / b.height || 0.8;
-  const w = Math.max(1052 * asp, 500);
-  return { cx: 450, cy: 516, w, home: true };
+  const w = Math.max(V.contentH * asp, V.minW);
+  return { cx: V.cx, cy: V.cy, w, home: true };
 }
 function clampCam() {
   const home = homeCam();
   cam.w = clamp(cam.w, 60, home.w * 1.5);
-  cam.cx = clamp(cam.cx, 180, 720);
-  cam.cy = clamp(cam.cy, 0, 1032);
+  cam.cx = clamp(cam.cx, V.clampX[0], V.clampX[1]);
+  cam.cy = clamp(cam.cy, V.clampY[0], V.clampY[1]);
 }
 function applyCam() {
   const v = viewRect();
@@ -171,6 +170,8 @@ function goto(target, ms = 720) {
 function boundsOf(key) {
   const both = BY_ID[key]?.frame === 'both';
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const views = new Set(groups.filter((g) => g.dataset.key === key).map((g) => g.dataset.view || ''));
+  if (views.size > 1) return null; // drawn in more than one view: show the whole figure
   groups.forEach((g) => {
     if (g.dataset.key !== key) return;
     if (!both && +g.dataset.side > 0) return;
@@ -392,7 +393,7 @@ function currentSet() { return questionSet(cfg.level, cfg.region); }
 function renderList() {
   const set = currentSet();
   listBody.textContent = '';
-  const order = cfg.region === 'all' ? ['axial', 'upper', 'lower'] : [cfg.region];
+  const order = cfg.region === 'all' ? G.regionOrder : [cfg.region];
   const playing = run && (phase === 'ask' || phase === 'feedback');
   let n = 0;
   order.forEach((reg) => {
@@ -444,16 +445,16 @@ listBody.addEventListener('pointerleave', () => {
 /* setup controls                                                       */
 /* ------------------------------------------------------------------ */
 const MODE_HINT = {
-  type: 'A bone is highlighted. Type its anatomical name. A wrong answer gets one more try and a hint.',
-  choose: 'A bone is highlighted. Pick the right name from four options.',
-  locate: 'You are given a name. Click the matching bone on the figure.',
-  legacy: 'The classic format. Click the pin that matches each name, one click per bone. Ranked by accuracy, then time.',
+  type: `A ${noun} is highlighted. Type its name. A wrong answer gets one more try and a hint.`,
+  choose: `A ${noun} is highlighted. Pick the right name from four options.`,
+  locate: `You are given a name. Click the matching ${noun} on the figure.`,
+  legacy: `The classic format. Click the pin that matches each name, one click per ${noun}. Ranked by accuracy, then time.`,
 };
 const FOOT = {
   type: 'Enter checks your answer. A wrong first try gets a hint and one more go. A letter hint costs 25 points.',
   choose: 'Press 1 to 4 to choose. Enter or Space continues.',
   locate: 'A second try scores 60. Scroll to zoom, drag to pan.',
-  legacy: 'Accuracy sets your rank and time breaks ties. Scroll or pinch to zoom in on small bones. Quitting is not ranked.',
+  legacy: `Accuracy sets your rank and time breaks ties. Scroll or pinch to zoom in on small ${nouns}. Quitting is not ranked.`,
 };
 const regionBox = $('.chips[data-key="region"]');
 Object.entries(REGIONS).forEach(([k, label]) => {
@@ -488,7 +489,7 @@ function syncControls() {
     : best.legacy ? `Best ${fmtAcc(best.acc)} · ${fmtTenths(best.ms / 1000)}`
     : `Best ${best.score.toLocaleString('en-US')} · ${best.acc}%`;
 }
-const bestKey = () => (cfg.mode === 'legacy' ? `ossa.best.legacy.${cfg.level}.${cfg.region}` : `ossa.best.${cfg.mode}.${cfg.level}.${cfg.region}.${cfg.clock}`);
+const bestKey = () => (cfg.mode === 'legacy' ? `${P}.best.legacy.${cfg.level}.${cfg.region}` : `${P}.best.${cfg.mode}.${cfg.level}.${cfg.region}.${cfg.clock}`);
 
 $$('[data-key]').forEach((grp) => {
   grp.addEventListener('click', (e) => {
@@ -496,7 +497,7 @@ $$('[data-key]').forEach((grp) => {
     if (!b) return;
     const k = grp.dataset.key;
     cfg[k] = k === 'level' || k === 'clock' ? +b.dataset.v : b.dataset.v;
-    store.set('ossa.cfg', cfg);
+    store.set(`${P}.cfg`, cfg);
     if (k === 'level' || k === 'region') { if (selected) clearSelection(); applyLevel(); renderList(); }
     syncControls();
   });
@@ -610,12 +611,12 @@ function ask() {
     $('#prompt').textContent = 'Find the';
     $('#loc-name').textContent = bone.name;
     $('#loc-hint').className = 'hint';
-    $('#loc-hint').textContent = legacy ? 'Click the matching pin on the figure.' : 'Click the bone on the figure.';
+    $('#loc-hint').textContent = legacy ? 'Click the matching pin on the figure.' : `Click the ${noun} on the figure.`;
     highlight(null);
     clearPin();
     if (!legacy) goto(homeCam(), 600);
   } else {
-    $('#prompt').textContent = 'Name the highlighted bone.';
+    $('#prompt').textContent = `Name the highlighted ${noun}.`;
     highlight(key);
     goto(camFor(key), 800);
     setPin(anchorFor(key), pad2(run.i + 1), '');
@@ -712,7 +713,7 @@ function conclude(kind, info = {}) {
   $('#a-type').hidden = true;
   $('#a-locate').hidden = true;
   $('#prompt').hidden = cfg.mode !== 'choose';
-  if (cfg.mode === 'choose') { $('#skip-c').hidden = true; $('#prompt').textContent = 'Name the highlighted bone.'; }
+  if (cfg.mode === 'choose') { $('#skip-c').hidden = true; $('#prompt').textContent = `Name the highlighted ${noun}.`; }
   $('#fb').classList.toggle('solo', cfg.mode !== 'choose');
   $('#fb').hidden = false;
   $('#next').focus({ preventScroll: true });

@@ -54,24 +54,33 @@ resolve relative URLs differently.
 ## Layout
 
 ```
-index.html, home.css, home.js   the homepage (the hero plate reuses the game's skeleton drawing)
+index.html, home.css, home.js   the homepage (the hero plate reuses Ossa's skeleton drawing)
 assets/                         homepage images
-ossa/                           the game: index.html, styles.css, js/, favicon.svg, og.png
-fonts/                          self-hosted Instrument Serif, Geist and Geist Mono, shared by both
+engine/                         shared game engine: app.js, catalog.js, geom.js, styles.css
+ossa/                           game: index.html, js/ (game.js, data.js, skeleton.js), favicon.svg, og.png
+musculi/                        game: index.html, figure.css, js/ (game.js, data.js, figure.js), favicon.svg, og.png
+fonts/                          self-hosted Instrument Serif, Geist and Geist Mono, shared by all pages
 og.png, favicon.svg             homepage share image and icon
 ```
 
-Adding a game means adding a folder next to `ossa/` and a card in the homepage's Games section.
+Adding a game means adding a folder next to `ossa/` with an `index.html` whose `<body data-game>` names a
+config module, and a card in the homepage's Games section.
 
 ## How it is put together
 
-- `ossa/js/geom.js`: spline, tapered-tube and blob helpers used to author the skeleton.
-- `ossa/js/skeleton.js`: the anterior-view skeleton as vector geometry. Paired bones are defined once
-  and mirrored. Each drawn bone is a group tagged `data-bone`.
-- `ossa/js/data.js`: names, notes and the bone hierarchy. `syn` holds accepted anatomical synonyms (cranium, zygoma);
-  `everyday` holds folk names that are never accepted and feed the Type-mode hint. `level`, `splitAt` and `parent`
-  fold fine bones (say, the scaphoid) into their parent (carpals) at lower difficulties, which is how
-  one drawing serves all three sets. Also holds the typed-answer matcher (synonyms, plurals, typo tolerance).
-- `ossa/js/app.js`: camera (pan, zoom, framing), pins, modes, scoring, timer and results.
-- `ossa/styles.css`: the glass surfaces. Blur, hairline borders and directional inner highlights only:
-  no gradients.
+- `engine/app.js`: the whole game for any subject: camera (pan, zoom, framing), pins, modes, scoring, timer and
+  results. It loads the page's config module (`<body data-game>`) and knows nothing about bones or muscles.
+- `engine/catalog.js`: level folding (`resolve`, `questionSet`) and the typed-answer matcher (synonyms, plurals, typo
+  tolerance), built from a game's item list.
+- `engine/geom.js`: spline, tapered-tube and blob helpers used to author the figures.
+- `engine/styles.css`: the glass surfaces. Blur, hairline borders and directional inner highlights only: no gradients.
+- A game config (`game.js`) exports `id`, `text` (the noun), `data`, `regionOrder`, `anchorVia`, `view` (camera
+  framing), `buildFigure`, `renderMarkup` and an optional `migrate`.
+- `ossa/js/skeleton.js`: the anterior-view skeleton as vector geometry. Paired bones are defined once and mirrored.
+  Each drawn bone is a group tagged `data-bone`.
+- `musculi/js/figure.js`: front and back muscle plates side by side. Each drawn muscle is a group tagged `data-bone`
+  and `data-view`; a muscle drawn on both plates (deltoid, gastrocnemius) is one answer. Silhouette groups are
+  `data-inert`.
+- `*/js/data.js`: names, notes and hierarchy. `syn` holds accepted synonyms; `everyday` holds folk names that are never
+  accepted and feed the Type-mode hint. `level`, `splitAt` and `parent` fold fine parts (the scaphoid, the vastus
+  lateralis) into their parent at lower difficulties, which is how one drawing serves both sets.
